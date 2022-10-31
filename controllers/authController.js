@@ -39,7 +39,7 @@ const login = asyncHandler(async(req, res) =>{
         httpOnly:true, //only accessible by a web server
         secure:true, //https
         sameSite: 'none', //cross-sitw cookie
-        maxAge: 7*24*60*1000 // cookie expiry
+        maxAge: 7* 24 * 60 * 1000 // cookie expiry
     })
     //send accessToken containing username and roles
     res.json({accessToken})
@@ -52,11 +52,37 @@ const refresh = () => {
 
     const refreshToken = cookies.jwt
 
-    
+    jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET,
+
+        asyncHandler(async (err, decoded) =>{
+            if(err) return res.status(403).json({ message: "Forbidden"})
+
+            const foundUser = await User.findOne({ username: decoded.username})
+
+            if(!foundUser) return res.status(401).json({message: 'Unauthorized'})
+
+            const accessToken = jwt.sign(
+                {
+                    "username": foundUser.username,
+                    "roles":foundUser.roles
+                },
+                process.env.ACCESS_TOKEN_SECRET,
+                { expiresIn: '10min'}
+            )
+
+            res.json({accessToken})
+        })
+    )
+
 }
 
 const logout = (req, res) =>{
-
+    const cookies = req.cookies
+    if(!cookies?.jwt) return res.sendStatus(204) //no content
+    res.clearCookie('jwt', {httpOnly: true, sameSite: 'None' , secure: true})
+    res.json({ message: "cookie cleared"})
 }
 
 module.exports ={
