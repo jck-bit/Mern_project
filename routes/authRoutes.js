@@ -11,6 +11,6 @@ router.route('/refresh')
     .get(authController.refresh)
 
 router.route('/logout')
-    .post(authController.refresh)
+    .post(authController.logout)
 
 module.exports = router
