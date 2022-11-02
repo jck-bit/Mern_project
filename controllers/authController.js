@@ -45,7 +45,7 @@ const login = asyncHandler(async(req, res) =>{
     res.json({accessToken})
 })
 
-const refresh = () => {
+const refresh = (req, res) => {
     const cookies = req.cookies
 
     if(!cookies?.jwt) return res.status(401).json({message:"unaothorized"})
@@ -69,7 +69,7 @@ const refresh = () => {
                     "roles":foundUser.roles
                 },
                 process.env.ACCESS_TOKEN_SECRET,
-                { expiresIn: '10min'}
+                { expiresIn: '30min'}
             )
 
             res.json({accessToken})
@@ -82,7 +82,7 @@ const logout = (req, res) =>{
     const cookies = req.cookies
     if(!cookies?.jwt) return res.sendStatus(204) //no content
     res.clearCookie('jwt', {httpOnly: true, sameSite: 'None' , secure: true})
-    res.json({ message: "cookie cleared"})
+    res.json({ message: "cookies cleared"})
 }
 
 module.exports ={

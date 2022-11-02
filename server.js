@@ -4,6 +4,7 @@ const app = express()
 const path = require('path')
 const {logger, logEvents}  = require('./middleware/logger')
 const errorHandler = require('./middleware/errorHandler')
+const verifyJWT = require('./middleware/verifyJWT');
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const corsOptions = require('./config/corsOptions')
@@ -21,8 +22,10 @@ app.use(cookieParser())
 
 app.use('/', express.static(path.join(__dirname, 'public')))
 app.use('/', require('./routes/root'))
+app.use(verifyJWT)
 app.use('/users', require('./routes/userRoutes'))
 app.use('/auth', require('./routes/authRoutes'))
+
 
 app.all('*', (req, res) =>{
     res.status(404)
