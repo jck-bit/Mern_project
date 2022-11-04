@@ -4,45 +4,31 @@ const jwt = require('jsonwebtoken')
 const asyncHandler = require('express-async-handler')
 
 const login = asyncHandler(async(req, res) =>{
-    const {username, password} = req.body
+    const {email, password} = req.body
 
-    if(!username || !password) {
+    if(!email || !password) {
         return res.status(400).json({message: "All Fields are required"})
     }
 
-    const foundUser = await User.findOne({username}).exec()
-    if(!foundUser || !foundUser.active){
-        return res.status(401).json({message:"Unauthorized"})
+    const user = await User.findOne({email}).exec()
+    if(!user || !user.active){
+        return res.status(401).json({message:"User does not Exist"})
     }
 
-    const match = await bcrypt.compare(password, foundUser.password)
+    if(user && (await bcrypt.compare(password, user.password))){
+        res.json({
+            _id: user.id,
+            name: user.name,
+            email: user.email,
+            token: generateToken(user._id),
+        })
+    }else{
+        res.status(400)
+        throw new Error('Invalid Credentials')
+    }
 
-    if(!match) return res.status(401).json({message: "Unauthorized"})
-
-    const accessToken = jwt.sign(
-        {
-            "UserInfo":{
-                "username":foundUser.username,
-                "roles":foundUser.roles
-            }
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: '10min'}
-    )
-    const refreshToken = jwt.sign(
-        {"username": foundUser.username},
-        process.env.REFRESH_TOKEN_SECRET,
-        {expiresIn: '1d'}
-    )
-    //create a secure cookie with the refresh token
-    res.cookie('jwt', refreshToken, {
-        httpOnly:true, //only accessible by a web server
-        secure:true, //https
-        sameSite: 'none', //cross-sitw cookie
-        maxAge: 7* 24 * 60 * 1000 // cookie expiry
-    })
-    //send accessToken containing username and roles
-    res.json({accessToken})
+    
+    
 })
 
 const refresh = (req, res) => {
@@ -84,6 +70,12 @@ const logout = (req, res) =>{
     res.clearCookie('jwt', {httpOnly: true, sameSite: 'None' , secure: true})
     res.json({ message: "cookies cleared"})
 }
+
+const generateToken = (id) => {
+    return jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET, {
+      expiresIn: '30d',
+    })
+  }
 
 module.exports ={
     login,

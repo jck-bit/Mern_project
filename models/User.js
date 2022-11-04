@@ -9,6 +9,11 @@ const userSchema = new mongoose.Schema({
         type:String,
         required:true
     },
+    email:{
+        type: String,
+        required: [true, 'Please add an email'],
+        unique: true,
+    },
     roles:[{
         type:String,
         default: "Employee"

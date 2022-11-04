@@ -1,4 +1,5 @@
 const asyncHandler = require('express-async-handler')
+const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const User = require('../models/User')
 const Note = require('../models/Note')
@@ -20,28 +21,38 @@ const getAllUsers = asyncHandler(async (req, res) =>{
 //@access private
 
 const createNewUser = asyncHandler(async (req, res) =>{
-    const { username, password, roles} = req.body
+    const { username, password, email} = req.body
 
     //confirm_data
-    if(!username || !password || !Array.isArray(roles) ||!roles.length) {
+    if(!username || !password ||!email) {
         return res.status(400).json({message :'All fields are required'})
     }
 
     //check for duplicates
-    const duplicate = await User.findOne({username}).lean().exec()
+    const duplicate = await User.findOne({email}).lean().exec()
     if (duplicate) {
-        return res.status(409).json({message: 'Username Alraedy in use'})
+        return res.status(409).json({message: 'email Alraedy in use'})
     }
     //Hash password
     const hashedpwd = await bcrypt.hash(password, 10) //salt rounds
-    const userObject = {username, "password": hashedpwd, roles}
 
     //create and store
-    const user = await User.create(userObject)
-    if (user) {
-        res.status(201).json({message: `new user ${username} created`})
+    const user = await User.create({
+        username,
+        email,
+        password: hashedpwd
+    })
+
+    if (user){
+        res.status(201).json({
+            _id:user.id,
+            name:user.username,
+            email:user.email,
+            token: generateToken(user._id)
+        })
     }else{
-        res.status(400).json({message:'Invalid user data received'})
+        res.status(400)
+        throw new Error('Invalid user Data')
     }
 })
 
@@ -63,7 +74,6 @@ const updateUser = asyncHandler(async (req, res) =>{
     if(!user) {
         return res.status(400).json({message: 'user Not found'})
     }
-
     //check duplicate
     const duplicate = await User.findOne({username}).lean().exec()
 
@@ -72,7 +82,7 @@ const updateUser = asyncHandler(async (req, res) =>{
         return res.status(400).json({message: 'Duplicate username'})
     }
     user.username = username
-    user.roles = roles
+
     user.active = active
 
     if (password) {
@@ -110,6 +120,13 @@ const deleteUser = asyncHandler(async (req, res) =>{
 
     res.json(reply)
 })
+
+
+const generateToken = (id) => {
+    return jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET, {
+      expiresIn: '30d',
+    })
+  }
 
 module.exports = {
     getAllUsers,
