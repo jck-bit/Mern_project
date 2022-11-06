@@ -4,7 +4,7 @@ const app = express()
 const path = require('path')
 const {logger, logEvents}  = require('./middleware/logger')
 const errorHandler = require('./middleware/errorHandler')
-const verifyJWT = require('./middleware/AuthMiddleware');
+// const verifyJWT = require('./middleware/AuthMiddleware');
 const cookieParser = require('cookie-parser')
 // const cors = require('cors')
 // const corsOptions = require('./config/corsOptions')
@@ -25,6 +25,7 @@ app.use('/', require('./routes/root'))
 
 app.use('/users', require('./routes/userRoutes'))
 app.use('/auth', require('./routes/authRoutes'))
+app.use('/products', require('./routes/productRoutes'))
 
 
 app.all('*', (req, res) =>{

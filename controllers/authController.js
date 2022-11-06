@@ -27,8 +27,6 @@ const login = asyncHandler(async(req, res) =>{
         throw new Error('Invalid Credentials')
     }
 
-    
-    
 })
 
 const refresh = (req, res) => {
